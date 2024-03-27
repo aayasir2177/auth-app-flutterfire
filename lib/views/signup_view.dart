@@ -1,10 +1,12 @@
-// ignore_for_file: prefer_const_constructors
+// ignore_for_file: prefer_const_constructors, avoid_print, unused_import, use_build_context_synchronously
 
 import 'package:auth_app_flutterfire/components/custom_button.dart';
 import 'package:auth_app_flutterfire/components/custom_text_field.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
+import 'package:toastification/toastification.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SignUpView extends StatefulWidget {
   const SignUpView({super.key});
@@ -20,6 +22,62 @@ class _SignUpViewState extends State<SignUpView> {
   final _emailController = TextEditingController();
   final _passController = TextEditingController();
   final _confirmPassController = TextEditingController();
+
+  void signUserUp() async {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return Center(child: CircularProgressIndicator.adaptive());
+        });
+
+    try {
+      if (_passController.text == _confirmPassController.text) {
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: _emailController.text,
+          password: _passController.text,
+        );
+
+        toastification.show(
+          context: context,
+          title: Text('Account has been successfully created.'),
+          type: ToastificationType.success,
+          autoCloseDuration: const Duration(seconds: 5),
+        );
+
+        Navigator.pushReplacementNamed(context, '/');
+      } else {
+        toastification.show(
+          context: context,
+          title: Text('Password and confirm password does not match!'),
+          type: ToastificationType.error,
+          autoCloseDuration: const Duration(seconds: 5),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'weak-password') {
+        toastification.show(
+          context: context,
+          title: Text('The password provided is too weak.'),
+          type: ToastificationType.warning,
+          autoCloseDuration: const Duration(seconds: 5),
+        );
+
+        _passController.clear();
+        _confirmPassController.clear();
+      } else if (e.code == 'email-already-in-use') {
+        toastification.show(
+          context: context,
+          title: Text('The account already exists for that email.'),
+          type: ToastificationType.error,
+          autoCloseDuration: const Duration(seconds: 5),
+        );
+      }
+    } catch (e) {
+      print(e);
+    }
+
+    Navigator.pop(context);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,8 +164,11 @@ class _SignUpViewState extends State<SignUpView> {
                 height: 10,
               ),
 
-              CustomButton(
-                buttonName: "Sign Up",
+              GestureDetector(
+                onTap: signUserUp,
+                child: CustomButton(
+                  buttonName: "Sign Up",
+                ),
               ),
 
               const SizedBox(
@@ -121,7 +182,7 @@ class _SignUpViewState extends State<SignUpView> {
                   Text("Already a member?"),
                   GestureDetector(
                     onTap: () {
-                      Navigator.pushNamed(context, '/SignInView');
+                      Navigator.pushReplacementNamed(context, '/SignInView');
                     },
                     child: Text(
                       " Sign In",

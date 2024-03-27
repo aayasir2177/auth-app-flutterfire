@@ -1,11 +1,11 @@
-// ignore_for_file: prefer_const_constructors
+// ignore_for_file: prefer_const_constructors, avoid_print, use_build_context_synchronously
 
 import 'package:auth_app_flutterfire/components/custom_button.dart';
 import 'package:auth_app_flutterfire/components/custom_text_field.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:toastification/toastification.dart';
 
 class SignInView extends StatefulWidget {
   const SignInView({super.key});
@@ -17,6 +17,49 @@ class SignInView extends StatefulWidget {
 class _SignInViewState extends State<SignInView> {
   final _emailController = TextEditingController();
   final _passController = TextEditingController();
+
+  void signUserIn() async {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return Center(child: CircularProgressIndicator.adaptive());
+        });
+
+    if (_passController.text.isNotEmpty && _emailController.text.isNotEmpty) {
+      try {
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+            email: _emailController.text, password: _passController.text);
+
+        toastification.show(
+          context: context,
+          title:
+              Text('Welcome back ${FirebaseAuth.instance.currentUser!.email}'),
+          type: ToastificationType.success,
+          autoCloseDuration: const Duration(seconds: 5),
+        );
+
+        Navigator.pushReplacementNamed(context, '/');
+      } on FirebaseAuthException {
+        toastification.show(
+          context: context,
+          title: Text("Incorrect email or password!"),
+          type: ToastificationType.error,
+          autoCloseDuration: const Duration(seconds: 5),
+        );
+
+        Navigator.pop(context);
+      }
+    } else {
+      toastification.show(
+        context: context,
+        title: Text('Enter field(s)!'),
+        type: ToastificationType.error,
+        autoCloseDuration: const Duration(seconds: 5),
+      );
+
+      Navigator.pop(context);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +105,7 @@ class _SignInViewState extends State<SignInView> {
 
               CustomTextField(
                 textController: _passController,
+                obscureText: true,
                 hintText: "Password",
               ),
 
@@ -74,7 +118,8 @@ class _SignInViewState extends State<SignInView> {
                 children: [
                   GestureDetector(
                     onTap: () {
-                      Navigator.pushNamed(context, "/ResetPasswordView");
+                      Navigator.pushReplacementNamed(
+                          context, "/ResetPasswordView");
                     },
                     child: Text(
                       "Forgot Password?",
@@ -90,8 +135,11 @@ class _SignInViewState extends State<SignInView> {
                 height: 10,
               ),
 
-              CustomButton(
-                buttonName: "Sign In",
+              GestureDetector(
+                onTap: signUserIn,
+                child: CustomButton(
+                  buttonName: "Sign In",
+                ),
               ),
 
               const SizedBox(
@@ -105,7 +153,7 @@ class _SignInViewState extends State<SignInView> {
                   Text("Not a member?"),
                   GestureDetector(
                     onTap: () {
-                      Navigator.pushNamed(context, '/SignUpView');
+                      Navigator.pushReplacementNamed(context, '/SignUpView');
                     },
                     child: Text(
                       " Register now",

@@ -1,9 +1,8 @@
-// ignore_for_file: prefer_const_constructors
+// ignore_for_file: prefer_const_constructors, unnecessary_import
 
 import 'package:auth_app_flutterfire/components/custom_button.dart';
 import 'package:auth_app_flutterfire/components/custom_text_field.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 class ResetPasswordView extends StatelessWidget {
   ResetPasswordView({super.key});
